@@ -1,0 +1,81 @@
+---
+title: "Week2lab"
+author: "Ismail"
+date: "9/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+```
+
+## Executive summary
+It is a dream for every person to buy their own house so that they can live in peace without having to worry about having to vacate. Besides it is always a good and safe investment. In this assignment, we will investigate the different factors which can influence house prices.
+
+## Introduction
+In 2019, Melbourne was declared as the most livable city on earth. This well deserved title can be accredited to its pleasant weather, beautiful architecture and safety rating. The city is a prime attraction for migration and has potential for great returns on real estate investment.
+
+## 1.1 Load data
+We will load the melbourne dataset which contains detail of houses sold in years 2016 - 2018.
+```{r melbdata}
+melbdata <- read.csv("Melbourne_housing_FULL.csv", header = TRUE)
+head(melbdata)
+```
+## 1.2 Initial analysis
+
+For our analysis we will be looking at Brunswick, Craigieburn and Hawthorn suburbs only. We will perform initial data analysis to gain insights. We will also print out statistical summaries of each suburb.
+
+```{r}
+suburbs <- subset(melbdata, Suburb == "Hawthorn" | Suburb == "Brunswick" | Suburb == "Craigieburn")
+dim(suburbs)
+colnames(suburbs)
+nrow(suburbs)
+ggplot(suburbs, aes(Price)) + geom_histogram(fill = "blue", color = "black", 
+    bins = 10) + theme_classic() + labs(title = "Price Distribution")
+ggplot(suburbs, aes(Landsize, Price/1000, color = Suburb)) + geom_point() + labs(title = "Price distribution comparison with landsize and suburb")
+summary(suburbs$Price[which(suburbs$Suburb == "Hawthorn")])
+summary(suburbs$Price[which(suburbs$Suburb == "Craigieburn")])
+summary(suburbs$Price[which(suburbs$Suburb == "Brunswick")])
+```
+It can be seen that the price distribution is heavily skewed towards the right side. Also it can be seen that the landsize has little effect on Price however, a clear distinction can be seen among prices in different suburbs. Craigieburn appears to the cheapest suburb to live in followed by Brunswick and Hawthorn. Some of the data point have a landsize of zero which does not make sense.
+
+## 1.3 Finding association 1
+
+To observe the relationship between building area and price, we will construct a simple linear regression model.
+
+```{r}
+lmfit <- lm(Price ~ BuildingArea, data = suburbs)
+lmfit
+plot(suburbs$BuildingArea, suburbs$Price, xlab = 'BuildingArea', ylab = 'Price')
+abline(lmfit)
+```
+The above model has an R square value of 0.3527 which indicates a poor fitted model. This was expected from initial data analysis which indicated price to be more dependent on suburb rather than landsize.
+
+# 1.4a Finding association 2
+
+Constructing a multi variable regression model by adding suburb variable to the predictor and experimenting with other variables as well
+
+```{r}
+lmfit2 <- lm(Price ~ Suburb + BuildingArea, data = suburbs) 
+summary(lmfit2)
+plot(lmfit2)
+```
+
+As can be seen the intercepts for the model are 509756, -150521 and 910471 for brunswick, craigieburn and hawthorn respectively which indicates average price of hawthorn is the highest and craigieburn is the lowest and the gradient is 4435. This indicates that for a particular suburb for every m2 of area, the price goes up by $4435. R squared value is 0.425 which indicates a better fitting than a univariate model with only the building area as the predictor.
+
+# 1.4b
+
+we will assess whether adding the number of car spaces improves our model or not using two different models
+
+```{r}
+lmfit3 <- lm(Price ~ Suburb + BuildingArea + Car, data = suburbs) 
+summary(lmfit3)
+plot(lmfit3)
+lmfit4 <- lm(Price ~ BuildingArea + Car, data = suburbs) 
+summary(lmfit4)
+plot(lmfit4)
+```
+
+As can be seen, the R squared for a model combining cuburb, area and number of cars as the predictor gives a better fit of R squared 0.477. However, if we remove suburb from the model we get a poor R squared value of 0.1883 which indicates that the bigger influencer on the price is the suburb.
+
